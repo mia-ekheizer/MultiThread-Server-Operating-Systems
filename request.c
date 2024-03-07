@@ -193,28 +193,3 @@ void requestHandle(int fd)
       requestServeDynamic(fd, filename, cgiargs);
    }
 }
-
-   /*
-   fd_set requests_fds;
-   FD_ZERO(&requests_fds);
-   int min_fd = waiting_requests.head->fd;
-   int max_fd = waitinf_requests.tail->fd;
-   if (waiting_requests.size != 0)
-   {
-      for (int fd = min_fd; fd < max_fd; fd++)
-      {
-         FD_SET(fd, &requests_fds);
-      }
-   }
-   select(max_fd + 1, &requests_fds, NULL, NULL, NULL);
-   if (waiting_requests.size != 0)
-   {
-      for (int fd = min_fd; fd < max_fd; fd++)
-      {
-         if (FD_ISSET(fd, &requests_fd))
-         {
-            requestHandle(fd);
-         }
-      }
-   }
-   */

@@ -1,20 +1,27 @@
 #include "queue.h"
 
-void enqueue(queue *q, request *req) {
-    if(q.isEmpty()) {
+void initRequestQueue(struct requestQueue* q) {
+    q->head = NULL;
+    q->tail = NULL;
+    q->size = 0;
+}
+
+void enqueue(struct requestQueue *q, struct request *req) {
+    if(isEmpty(q)) {
         q->head = req;
         q->tail = req;
     }
     else {
-        request *prevTail = q->tail;
+        struct request *prevTail = q->tail;
         q->tail = req;
         req->prev = prevTail;
         prevTail->next = req;
     }
     q->size++;
 }
-request* dequeue(queue *q) {
-    request *returnRequest = q->head;
+
+struct request* dequeue(struct requestQueue *q) {
+    struct request *returnRequest = q->head;
     if(q->size == 1) {
         q->head = NULL;
         q->tail = NULL;
@@ -26,12 +33,10 @@ request* dequeue(queue *q) {
     q->size--;
     return returnRequest;
 }
-bool isEmpty(queue q) {
-    return q.size == 0;
+
+int isEmpty(struct requestQueue *q) {
+    return q->size == 0;
 }
 
 //for drop_random usage:
-void delByIndex(queue *q, int index); //TODO:
-int getQueueSize(queue q) {
-    return q.size;
-}
+void delByIndex(struct requestQueue *q, int index); //TODO:

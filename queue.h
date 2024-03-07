@@ -1,29 +1,26 @@
 #ifndef HW3_QUEUE_H
 #define HW3_QUEUE_H
 
-#include "pthread.h"
+#include <string.h>
 
 typedef struct request {
     int connfd;
     struct request *prev;
     struct request *next;
-}
+};
 
-typedef struct queue {
-    request *head;
-    request *tail;
+typedef struct requestQueue {
+    struct request *head;
+    struct request *tail;
     int size;
-    
-}
+};
 
-void enqueue(queue *q, request *req);
-request* dequeue(queue *q);
-bool isEmpty(queue q);
+void initRequestQueue(struct requestQueue* q);
+void enqueue(struct requestQueue *q, struct request *req);
+struct request* dequeue(struct requestQueue *q);
+int isEmpty(struct requestQueue *q);
 
 //for drop_random usage:
-void delByIndex(queue *q, int index);
-int getQueueSize(queue q);
-
-
+void delByIndex(struct requestQueue *q, int index);
 
 #endif /* HW3_QUEUE_H */
