@@ -15,6 +15,15 @@ typedef struct requestQueue {
     int size;
 };
 
+typedef struct serverArgs {
+    pthread_mutex_t currMutex;
+    pthread_cond_t cond_var_workers;
+    pthread_cond_t cond_var_master;
+    struct requestQueue *waiting_requests;
+    struct requestQueue *handled_requests;
+    int queue_size;
+};
+
 void initRequestQueue(struct requestQueue* q);
 void enqueue(struct requestQueue *q, struct request *req);
 struct request* dequeue(struct requestQueue *q);

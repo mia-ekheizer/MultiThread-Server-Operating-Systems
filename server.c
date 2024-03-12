@@ -1,6 +1,8 @@
 #include "segel.h"
 #include "request.h"
 #include <pthread.h>
+#include "queue.h"
+#include "schedalg.h"
 
 // 
 // server.c: A very, very simple web server
@@ -19,14 +21,20 @@ mutex_t mutex;
 int waiting_requests_size = 0; // state variable for the worker condition variable
 int handled_requests_size = 0; // state variable for the master condition variable
 
+enum Schedalg {BLOCK, DT, DH, BF, RANDOM};
+
 // HW3: Parse the new arguments too
-void getargs(int *portnum, int *threads, int* queue_size, char** schedalg, int argc, char *argv[])
+void getargs(int *portnum, int *threads, int* queue_size, enum Schedalg *schedalg, int argc, char *argv[])
 {
-    if (argc < 2) {
-	fprintf(stderr, "Usage: %s <port>\n", argv[0]);
-	exit(1);
+    if (argc != 5) { //TODO: changed from <2 to != 5
+	    fprintf(stderr, "Usage: %s <port>\n", argv[0]);
+	    exit(1);
     }
     *portnum = atoi(argv[1]);
+    if(*portnum < 1024 || *portnum > 65535) {//TODO: is this necessary?
+        //TODO: fix silent exit??
+        exit(1);
+    }
     *threads = atoi(argv[2]);
     if (!threads || *threads <= 0) {
         exit(1);
@@ -36,7 +44,23 @@ void getargs(int *portnum, int *threads, int* queue_size, char** schedalg, int a
         exit(1);
     }
     *schedalg = argv[4];
-    if (*schedalg != "block" && *schedalg != "dt" && *schedalg != "dh" && *schedalg != "bf" && *schedalg != "random") {
+    if(strcmp(*schedalg, "block") == 0) {
+        *schedalg = BLOCK;
+    }
+    else if(strcmp(*schedalg, "dt") == 0) {
+        *schedalg = DT;
+    }
+    else if(strcmp(*schedalg, "dh") == 0) {
+        *schedalg = DH;
+    }
+    else if(strcmp(*schedalg, "bf") == 0) {
+        *schedalg = BF;
+    }
+    else if(strcmp(*schedalg, "random") == 0) {
+        *schedalg = RANDOM;
+    }
+    else {
+        //TODO: fix silent exit??
         exit(1);
     }
 }
@@ -74,10 +98,12 @@ int main(int argc, char *argv[])
 {
     // setting up all the structs and variables.
     int listenfd, connfd, clientlen, portnum, threads, queue_size;
-    char* schedalg;
+    enum Schedalg schedalg;
     struct sockaddr_in clientaddr;
     struct requestQueue waiting_requests, handled_requests;
-    getargs(&portnum, &threads, &queue_size, &schedalg, argc, argv);
+    
+    pthread_cont_t cond_var_workers; // need this to ensure that the variable is initialized.
+    pthread_cont_t cond_var_master;
     pthread_cond_init(&cond_var_workers, NULL);
     pthread_cond_init(&cond_var_master, NULL);
 
@@ -85,9 +111,19 @@ int main(int argc, char *argv[])
     initRequestQueue(waiting_requests);
     initRequestQueue(handled_requests);
 
+    //initializing serverArgs.
+    serverArgs servArgs;
+    servArgs.currMutex = &mutex;
+    servArgs.cond_var_workers = &cond_var_workers;
+    servArgs.cond_var_master = &cond_var_master;
+    servArgs.waiting_requests = &waiting_requests;
+    servArgs.handled_requests = &handled_requests;
+    servArgs.queue_size = queue_size;
+
+    getargs(&portnum, &threads, &queue_size, &schedalg, argc, argv);
     // initializing the worker threads.
-    pthread_t* worker_threads = (pthread_t*)malloc(sizeof(pthread_t) * num_threads);
-    for (int i = 0; i < num_threads; i++)
+    pthread_t* worker_threads = (pthread_t*)malloc(sizeof(pthread_t) * threads);
+    for (int i = 0; i < threads; i++)
     {
         struct threadArgs* args = (threadArgs*)malloc(sizeof(threadArgs));
         args->waiting_requests = waiting_requests;
@@ -103,9 +139,29 @@ int main(int argc, char *argv[])
 	    connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         // adding the current request to the waiting_requests queue and starting again.
         curr_request.connfd = connfd;
+        curr_request.prev = NULL;
+        curr_request.next = NULL;
+
+        if(schedalg == BLOCK) {
+            blockSchedAlg(curr_request, &servArgs);
+        }
+        else if(schedalg == DT) {
+            dropTailSchedAlg(curr_request, &servArgs);
+        }
+        else if(schedalg == DH) {
+            dropHeadSchedAlg(curr_request, &servArgs);
+        }
+        else if(schedalg == BF) {
+            blockFlushSchedAlg(curr_request, &servArgs);
+        }
+        else if(schedalg == RANDOM) {
+            dropRandomSchedAlg(curr_request, &servArgs);
+        }
+        
+        /*
         mutex_lock(&mutex);
         // if the server has reached the maximal amount of requests, it waits.
-        while (handled_requests_size + waiting_requests_size > queue_size) { 
+        while (handled_requests_size + waiting_requests_size > queue_size) { //TODO: part2
             pthread_cond_wait(&cond_var_master, &mutex);
         }
         // once there is enough space to handle another request, the server continues.
@@ -115,6 +171,7 @@ int main(int argc, char *argv[])
         pthread_cond_signal(&cond_var_workers);
         mutex_unlock(&mutex);
 	    Close(connfd);
+        */
     }
     pthread_cond_destroy(cond_var_master);
     pthread_cond_destroy(cond_var_workers);
