@@ -1,18 +1,30 @@
 #include "queue.h"
+#include <sys/time.h>
 
-void initRequestQueue(struct requestQueue* q) {
+void initRequestQueue(requestQueue* q) {
     q->head = NULL;
     q->tail = NULL;
     q->size = 0;
 }
 
-void enqueue(struct requestQueue *q, struct request *req) {
+request* initRequest(int connfd) {
+    request* new_request = (request*)malloc(sizeof(request));
+    new_request.connfd = connfd;
+    new_request->prev = NULL;
+    new_request->next = NULL;
+    gettimeofday(new_request->arrival_time, NULL);
+    new_request->dispatch_time = NULL;
+    return new_request;
+}
+
+void enqueue(requestQueue *q, request *req) {
+    if (req->arrival_time)
     if(isEmpty(q)) {
         q->head = req;
         q->tail = req;
     }
     else {
-        struct request *prevTail = q->tail;
+        request *prevTail = q->tail;
         q->tail = req;
         req->prev = prevTail;
         prevTail->next = req;
@@ -20,8 +32,8 @@ void enqueue(struct requestQueue *q, struct request *req) {
     q->size++;
 }
 
-struct request* dequeue(struct requestQueue *q) {
-    struct request *returnRequest = q->head;
+request* dequeue(requestQueue *q) {
+    request *returnRequest = q->head;
     if(q->size == 1) {
         q->head = NULL;
         q->tail = NULL;
@@ -34,9 +46,9 @@ struct request* dequeue(struct requestQueue *q) {
     return returnRequest;
 }
 
-int isEmpty(struct requestQueue *q) {
+int isEmpty(requestQueue *q) {
     return q->size == 0;
 }
 
 //for drop_random usage:
-void delByIndex(struct requestQueue *q, int index); //TODO:
+void delByIndex(requestQueue *q, int index); //TODO:

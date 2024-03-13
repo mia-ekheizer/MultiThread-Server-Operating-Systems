@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include "queue.h"
 #include "schedalg.h"
+#include "thread_args.h"
+#include "server_args.h"
 
 // 
 // server.c: A very, very simple web server
@@ -18,13 +20,11 @@
 cond_t cond_var_master;
 cond_t cond_var_workers;
 mutex_t mutex;
-int waiting_requests_size = 0; // state variable for the worker condition variable
-int handled_requests_size = 0; // state variable for the master condition variable
 
-enum Schedalg {BLOCK, DT, DH, BF, RANDOM};
+typedef enum Schedalg {BLOCK, DT, DH, BF, RANDOM} Schedalg;
 
 // HW3: Parse the new arguments too
-void getargs(int *portnum, int *threads, int* queue_size, enum Schedalg *schedalg, int argc, char *argv[])
+void getargs(int *portnum, int *threads, int* queue_size, Schedalg *schedalg, int argc, char *argv[])
 {
     if (argc != 5) { //TODO: changed from <2 to != 5
 	    fprintf(stderr, "Usage: %s <port>\n", argv[0]);
@@ -68,26 +68,23 @@ void getargs(int *portnum, int *threads, int* queue_size, enum Schedalg *schedal
 // the function that all worker threads are working on.
 void* threadFunction(void* args)
 {
-    struct threadArgs* curr_args = (struct threadArgs*)args;
+    threadArgs* curr_args = (threadArgs*)args;
     // after a worker thread finishes handling a request, it waits again for another request.
     while (1) {
         mutex_lock(&mutex);
         // free threads are waiting for a new request.
-        while (waiting_requests_size == 0)
+        while (curr_args->waiting_requests->size == 0) // state variable for cond_var_workers.
         {
             pthread_cond_wait(&cond_var_workers, &mutex);
         }
         // once there is a free thread and a waiting request, the thread starts handling the request.
-        struct request* curr_request = dequeue(curr_args->waiting_requests);
-        waiting_requests_size--;
+        request* curr_request = dequeue(curr_args->waiting_requests);
         enqueue(curr_args->handled_requests, curr_request);
-        handled_requests_size++;
         mutex_unlock(&mutex);
         requestHandle(curr_request->connfd);
         mutex_lock(&mutex);
-        struct request* finished_request = dequeue(curr_args->handled_requests, curr_request);
+        request* finished_request = dequeue(curr_args->handled_requests);
         free(finished_request);
-        handled_requests_size--;
         // the thread signals the master that a request has been handled.
         pthread_cond_signal(&cond_var_master);
         mutex_unlock(&mutex);
@@ -98,12 +95,12 @@ int main(int argc, char *argv[])
 {
     // setting up all the structs and variables.
     int listenfd, connfd, clientlen, portnum, threads, queue_size;
-    enum Schedalg schedalg;
+    Schedalg schedalg;
     struct sockaddr_in clientaddr;
-    struct requestQueue waiting_requests, handled_requests;
+    requestQueue* waiting_requests = (requestQueue*)malloc(sizeof(requestQueue));
+    requestQueue* handled_requests = (requestQueue*)malloc(sizeof(requestQueue));
     
-    pthread_cont_t cond_var_workers; // need this to ensure that the variable is initialized.
-    pthread_cont_t cond_var_master;
+    //initializing condition variables.
     pthread_cond_init(&cond_var_workers, NULL);
     pthread_cond_init(&cond_var_master, NULL);
 
@@ -112,10 +109,10 @@ int main(int argc, char *argv[])
     initRequestQueue(handled_requests);
 
     //initializing serverArgs.
-    struct serverArgs servArgs;
-    servArgs.currMutex = &mutex;
-    servArgs.cond_var_workers = &cond_var_workers;
-    servArgs.cond_var_master = &cond_var_master;
+    serverArgs servArgs;
+    servArgs.currMutex = mutex;
+    servArgs.cond_var_workers = cond_var_workers;
+    servArgs.cond_var_master = cond_var_master;
     servArgs.waiting_requests = &waiting_requests;
     servArgs.handled_requests = &handled_requests;
     servArgs.queue_size = queue_size;
@@ -125,22 +122,19 @@ int main(int argc, char *argv[])
     pthread_t* worker_threads = (pthread_t*)malloc(sizeof(pthread_t) * threads);
     for (int i = 0; i < threads; i++)
     {
-        struct threadArgs* args = (threadArgs*)malloc(sizeof(threadArgs));
+        threadArgs* args = (threadArgs*)malloc(sizeof(threadArgs));
         args->waiting_requests = waiting_requests;
         args->handled_requests = handled_requests;
-        pthread_create(&worker_threads[i], NULL, threadFunction, (void)* args);
+        pthread_create(worker_threads[i], NULL, threadFunction, (void)* args);
     }
 
     // setting up server.
     listenfd = Open_listenfd(portnum);
     while (1) {
-        struct request* curr_request = (request*)malloc(sizeof(request));
 	    clientlen = sizeof(clientaddr);
 	    connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         // adding the current request to the waiting_requests queue and starting again.
-        curr_request->connfd = connfd;
-        curr_request->prev = NULL;
-        curr_request->next = NULL;
+        request* curr_request = initRequest(connfd);
 
         if(schedalg == BLOCK) {
             blockSchedAlg(curr_request, &servArgs);
@@ -160,5 +154,12 @@ int main(int argc, char *argv[])
     }
     pthread_cond_destroy(cond_var_master);
     pthread_cond_destroy(cond_var_workers);
+    for (int i = 0; i < threads; i++)
+    {
+        pthread_join(*worker_threads[i], NULL);
+        // how do we free args for each thread?
+    }
     free(worker_threads);
+    free(waiting_requests);
+    free(handled_requests);
 }

@@ -2,34 +2,29 @@
 #define HW3_QUEUE_H
 
 #include <string.h>
+#include <sys/time.h>
 
 typedef struct request {
     int connfd;
-    struct request *prev;
-    struct request *next;
-};
+    request *prev;
+    request *next;
+    // for statistics
+    struct timeval* arrival_time;
+    struct timeval* dispatch_time;
+} request;
 
 typedef struct requestQueue {
-    struct request *head;
-    struct request *tail;
+    request *head;
+    request *tail;
     int size;
-};
+} requestQueue;
 
-typedef struct serverArgs {
-    pthread_mutex_t currMutex;
-    pthread_cond_t cond_var_workers;
-    pthread_cond_t cond_var_master;
-    struct requestQueue *waiting_requests;
-    struct requestQueue *handled_requests;
-    int queue_size;
-};
-
-void initRequestQueue(struct requestQueue* q);
-void enqueue(struct requestQueue *q, struct request *req);
-struct request* dequeue(struct requestQueue *q);
-int isEmpty(struct requestQueue *q);
+void initRequestQueue(requestQueue* q);
+void enqueue(requestQueue *q, request *req);
+request* dequeue(requestQueue *q);
+int isEmpty(requestQueue *q);
 
 //for drop_random usage:
-void delByIndex(struct requestQueue *q, int index);
+void delByIndex(requestQueue *q, int index);
 
 #endif /* HW3_QUEUE_H */

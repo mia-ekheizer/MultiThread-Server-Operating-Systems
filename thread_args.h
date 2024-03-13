@@ -4,8 +4,8 @@
 #include "queue.h"
 
 typedef struct threadArgs {
-    struct requestQueue waiting_requests;
-    struct requestQueue handled_requests;
-};
+    requestQueue* waiting_requests;
+    requestQueue* handled_requests;
+} threadArgs;
 
 #endif /* HW3_THREAD_ARGS_H */
