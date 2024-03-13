@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
     initRequestQueue(handled_requests);
 
     //initializing serverArgs.
-    serverArgs servArgs;
+    struct serverArgs servArgs;
     servArgs.currMutex = &mutex;
     servArgs.cond_var_workers = &cond_var_workers;
     servArgs.cond_var_master = &cond_var_master;
@@ -138,9 +138,9 @@ int main(int argc, char *argv[])
 	    clientlen = sizeof(clientaddr);
 	    connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         // adding the current request to the waiting_requests queue and starting again.
-        curr_request.connfd = connfd;
-        curr_request.prev = NULL;
-        curr_request.next = NULL;
+        curr_request->connfd = connfd;
+        curr_request->prev = NULL;
+        curr_request->next = NULL;
 
         if(schedalg == BLOCK) {
             blockSchedAlg(curr_request, &servArgs);
@@ -157,21 +157,6 @@ int main(int argc, char *argv[])
         else if(schedalg == RANDOM) {
             dropRandomSchedAlg(curr_request, &servArgs);
         }
-        
-        /*
-        mutex_lock(&mutex);
-        // if the server has reached the maximal amount of requests, it waits.
-        while (handled_requests_size + waiting_requests_size > queue_size) { //TODO: part2
-            pthread_cond_wait(&cond_var_master, &mutex);
-        }
-        // once there is enough space to handle another request, the server continues.
-        enqueue(waiting_requests, curr_request);
-        waiting_requests_size++;
-        // the master thread signals to the other threads that there are waiting requests.
-        pthread_cond_signal(&cond_var_workers);
-        mutex_unlock(&mutex);
-	    Close(connfd);
-        */
     }
     pthread_cond_destroy(cond_var_master);
     pthread_cond_destroy(cond_var_workers);
