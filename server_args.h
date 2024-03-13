@@ -5,9 +5,9 @@
 #include "queue.h"
 
 typedef struct serverArgs {
-    mutex_t currMutex;
-    cond_t cond_var_workers;
-    cond_t cond_var_master;
+    pthread_mutex_t currMutex;
+    pthread_cond_t cond_var_workers;
+    pthread_cond_t cond_var_master;
     requestQueue* waiting_requests;
     requestQueue* handled_requests;
     int queue_size;

@@ -9,16 +9,14 @@ void initRequestQueue(requestQueue* q) {
 
 request* initRequest(int connfd) {
     request* new_request = (request*)malloc(sizeof(request));
-    new_request.connfd = connfd;
+    new_request->connfd = connfd;
     new_request->prev = NULL;
     new_request->next = NULL;
-    gettimeofday(new_request->arrival_time, NULL);
-    new_request->dispatch_time = NULL;
+    gettimeofday(&(new_request->arrival_time), NULL);
     return new_request;
 }
 
 void enqueue(requestQueue *q, request *req) {
-    if (req->arrival_time)
     if(isEmpty(q)) {
         q->head = req;
         q->tail = req;
@@ -48,6 +46,12 @@ request* dequeue(requestQueue *q) {
 
 int isEmpty(requestQueue *q) {
     return q->size == 0;
+}
+
+struct timeval calcDispatchInterval(request* req) {
+    struct timeval result;
+    timersub(&(req->dispatch_time), &(req->arrival_time), &result);
+    return result;
 }
 
 //for drop_random usage:

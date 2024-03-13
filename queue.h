@@ -9,8 +9,8 @@ typedef struct request {
     request *prev;
     request *next;
     // for statistics
-    struct timeval* arrival_time;
-    struct timeval* dispatch_time;
+    struct timeval arrival_time;
+    struct timeval dispatch_time;
 } request;
 
 typedef struct requestQueue {

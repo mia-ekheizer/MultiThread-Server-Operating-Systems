@@ -17,9 +17,9 @@
 //
 
 // setting up the condition variables, the mutex lock and the state variables to execute threadFunction and the master thread in order.
-cond_t cond_var_master;
-cond_t cond_var_workers;
-mutex_t mutex;
+pthread_cond_t cond_var_master;
+pthread_cond_t cond_var_workers;
+pthread_mutex_t mutex;
 
 typedef enum Schedalg {BLOCK, DT, DH, BF, RANDOM} Schedalg;
 
@@ -71,7 +71,8 @@ void* threadFunction(void* args)
     threadArgs* curr_args = (threadArgs*)args;
     // after a worker thread finishes handling a request, it waits again for another request.
     while (1) {
-        mutex_lock(&mutex);
+        pthread_mutex_lock(&mutex);
+        curr_args->id = pthread_self();
         // free threads are waiting for a new request.
         while (curr_args->waiting_requests->size == 0) // state variable for cond_var_workers.
         {
@@ -80,14 +81,16 @@ void* threadFunction(void* args)
         // once there is a free thread and a waiting request, the thread starts handling the request.
         request* curr_request = dequeue(curr_args->waiting_requests);
         enqueue(curr_args->handled_requests, curr_request);
-        mutex_unlock(&mutex);
-        requestHandle(curr_request->connfd);
-        mutex_lock(&mutex);
+        gettimeofday(&(curr_request->dispatch_time), NULL);
+        pthread_mutex_unlock(&mutex);
+        curr_args->total_req++;
+        requestHandle(curr_request, curr_args);
+        pthread_mutex_lock(&mutex);
         request* finished_request = dequeue(curr_args->handled_requests);
         free(finished_request);
         // the thread signals the master that a request has been handled.
         pthread_cond_signal(&cond_var_master);
-        mutex_unlock(&mutex);
+        pthread_mutex_unlock(&mutex);
     }
 }
 
@@ -113,8 +116,8 @@ int main(int argc, char *argv[])
     servArgs.currMutex = mutex;
     servArgs.cond_var_workers = cond_var_workers;
     servArgs.cond_var_master = cond_var_master;
-    servArgs.waiting_requests = &waiting_requests;
-    servArgs.handled_requests = &handled_requests;
+    servArgs.waiting_requests = waiting_requests;
+    servArgs.handled_requests = handled_requests;
     servArgs.queue_size = queue_size;
 
     getargs(&portnum, &threads, &queue_size, &schedalg, argc, argv);
@@ -135,7 +138,6 @@ int main(int argc, char *argv[])
 	    connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         // adding the current request to the waiting_requests queue and starting again.
         request* curr_request = initRequest(connfd);
-
         if(schedalg == BLOCK) {
             blockSchedAlg(curr_request, &servArgs);
         }
@@ -152,8 +154,8 @@ int main(int argc, char *argv[])
             dropRandomSchedAlg(curr_request, &servArgs);
         }
     }
-    pthread_cond_destroy(cond_var_master);
-    pthread_cond_destroy(cond_var_workers);
+    pthread_cond_destroy(&cond_var_master);
+    pthread_cond_destroy(&cond_var_workers);
     for (int i = 0; i < threads; i++)
     {
         pthread_join(*worker_threads[i], NULL);
