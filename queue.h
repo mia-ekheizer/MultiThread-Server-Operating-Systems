@@ -20,7 +20,7 @@ typedef struct requestQueue {
 } requestQueue;
 
 void initRequestQueue(requestQueue* q);
-request* initRequest(int connfd)
+request* initRequest(int connfd);
 void enqueue(requestQueue *q, request *req);
 request* dequeue(requestQueue *q);
 int isEmpty(requestQueue *q);
