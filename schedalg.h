@@ -2,6 +2,7 @@
 #define HW3_SCHEDALG_H
 
 #include "queue.h"
+#include "server_args.h"
 
 void blockSchedAlg(request *req, serverArgs *servArgs);
 void dropTailSchedAlg(request *req, serverArgs *servArgs);

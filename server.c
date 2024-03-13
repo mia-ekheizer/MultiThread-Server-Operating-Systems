@@ -43,20 +43,19 @@ void getargs(int *portnum, int *threads, int* queue_size, Schedalg *schedalg, in
     if (!queue_size || *queue_size <= 0) {
         exit(1);
     }
-    *schedalg = argv[4];
-    if(strcmp(*schedalg, "block") == 0) {
+    if(strcmp(argv[4], "block") == 0) {
         *schedalg = BLOCK;
     }
-    else if(strcmp(*schedalg, "dt") == 0) {
+    else if(strcmp(argv[4], "dt") == 0) {
         *schedalg = DT;
     }
-    else if(strcmp(*schedalg, "dh") == 0) {
+    else if(strcmp(argv[4], "dh") == 0) {
         *schedalg = DH;
     }
-    else if(strcmp(*schedalg, "bf") == 0) {
+    else if(strcmp(argv[4], "bf") == 0) {
         *schedalg = BF;
     }
-    else if(strcmp(*schedalg, "random") == 0) {
+    else if(strcmp(argv[4], "random") == 0) {
         *schedalg = RANDOM;
     }
     else {
@@ -158,7 +157,7 @@ int main(int argc, char *argv[])
     pthread_cond_destroy(&cond_var_workers);
     for (int i = 0; i < threads; i++)
     {
-        pthread_join(*worker_threads[i], NULL);
+        pthread_join(worker_threads[i], NULL);
         // how do we free args for each thread?
     }
     free(worker_threads);

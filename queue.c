@@ -1,5 +1,4 @@
 #include "queue.h"
-#include <sys/time.h>
 
 void initRequestQueue(requestQueue* q) {
     q->head = NULL;
