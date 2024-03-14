@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
     pthread_mutex_init(&mutex, NULL);
     initRequestQueue(&waiting_requests);
     initRequestQueue(&handled_requests);
-    initServerArgs(&servArgs, mutex, cond_var_workers, cond_var_master, &waiting_requests, &handled_requests, queue_size);
+    initServerArgs(&servArgs, &mutex, &cond_var_workers, &cond_var_master, &waiting_requests, &handled_requests, queue_size);
     getargs(&portnum, &num_threads, &queue_size, &schedalg, argc, argv);
     pthread_t* worker_threads = (pthread_t*)malloc(sizeof(pthread_t) * num_threads);
     initWorkerThreads(worker_threads, num_threads, &waiting_requests, &handled_requests);
