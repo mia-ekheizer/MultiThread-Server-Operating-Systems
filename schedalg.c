@@ -57,6 +57,7 @@ void dropHeadSchedAlg(request *req, serverArgs *servArgs){
 
 // implementation of the block flush scheduling algorithm.
 void blockFlushSchedAlg(request *req, serverArgs *servArgs){
+    
     pthread_mutex_unlock(&servArgs->currMutex);
 }
 

@@ -87,6 +87,7 @@ void destroyServer(pthread_t* worker_threads, int num_threads) {
 
 int main(int argc, char *argv[])
 {
+    printf("inside main");
     // setting up all the structs and variables.
     int listenfd, connfd, clientlen, portnum, num_threads, queue_size;
     char* schedalg;
