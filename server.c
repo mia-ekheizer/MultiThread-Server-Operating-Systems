@@ -22,7 +22,7 @@ pthread_cond_t cond_var_master;
 pthread_cond_t cond_var_workers;
 pthread_mutex_t mutex;
 
-setSchedAlg(const char* user_input) {
+SchedAlg setSchedAlg(const char* user_input) {
     if(strcmp(user_input, "block") == 0) {
         return BLOCK;
     }
@@ -45,7 +45,7 @@ setSchedAlg(const char* user_input) {
 }
 
 // HW3: Parse the new arguments too
-void getargs(int *portnum, int *num_threads, int* queue_size, Schedalg *schedalg, int argc, char *argv[])
+void getargs(int *portnum, int *num_threads, int* queue_size, SchedAlg *schedalg, int argc, char *argv[])
 {
     if (argc != 5) { //TODO: changed from <2 to != 5
 	    fprintf(stderr, "Usage: %s <port>\n", argv[0]);
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 {
     // setting up all the structs and variables.
     int listenfd, connfd, clientlen, portnum, num_threads, queue_size;
-    Schedalg schedalg;
+    SchedAlg schedalg;
     struct sockaddr_in clientaddr;
     requestQueue* waiting_requests = (requestQueue*)malloc(sizeof(requestQueue));
     requestQueue* handled_requests = (requestQueue*)malloc(sizeof(requestQueue));
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 	    clientlen = sizeof(clientaddr);
 	    connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         request* curr_request = initRequest(connfd);
-        pickSchedAlg(schedalg, curr_request, &servArgs);
+        pickSchedAlgAndExecute(schedalg, curr_request, &servArgs);
     }
     destroyServer(worker_threads, num_threads, waiting_requests, handled_requests);
 }

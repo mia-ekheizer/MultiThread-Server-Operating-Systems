@@ -3,7 +3,7 @@
 #include "segel.h"
 #include "server_args.h"
 
-void pickSchedAlg(Schedalg schedalg, request* curr_request, serverArgs *servArgs) {
+void pickSchedAlgAndExecute(SchedAlg schedalg, request* curr_request, serverArgs *servArgs) {
     if(schedalg == BLOCK) {
         blockSchedAlg(curr_request, servArgs);
     }

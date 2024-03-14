@@ -4,9 +4,9 @@
 #include "queue.h"
 #include "server_args.h"
 
-typedef enum Schedalg {BLOCK, DT, DH, BF, RANDOM} Schedalg;
+typedef enum SchedAlg {BLOCK, DT, DH, BF, RANDOM} SchedAlg;
 
-void pickSchedAlg(Schedalg schedalg, request* curr_request, serverArgs *servArgs);
+void pickSchedAlgAndExecute(SchedAlg schedalg, request* curr_request, serverArgs *servArgs);
 void blockSchedAlg(request *req, serverArgs *servArgs);
 void dropTailSchedAlg(request *req, serverArgs *servArgs);
 void dropHeadSchedAlg(request *req, serverArgs *servArgs);
