@@ -3,6 +3,24 @@
 #include "segel.h"
 #include "server_args.h"
 
+void pickSchedAlg(Schedalg schedalg, request* curr_request, serverArgs *servArgs) {
+    if(schedalg == BLOCK) {
+        blockSchedAlg(curr_request, servArgs);
+    }
+    else if(schedalg == DT) {
+        dropTailSchedAlg(curr_request, servArgs);
+    }
+    else if(schedalg == DH) {
+        dropHeadSchedAlg(curr_request, servArgs);
+    }
+    else if(schedalg == BF) {
+        blockFlushSchedAlg(curr_request, servArgs);
+    }
+    else if(schedalg == RANDOM) {
+        dropRandomSchedAlg(curr_request, servArgs);
+    }
+}
+
 void blockSchedAlg(request *req, serverArgs *servArgs) {
     pthread_mutex_lock(&(servArgs->currMutex));
     while(servArgs->waiting_requests->size + servArgs->handled_requests->size >= servArgs->queue_size) {

@@ -13,4 +13,6 @@ typedef struct threadArgs {
 	int total_req;
 } threadArgs;
 
+void initThreadArgs(threadArgs* thread_args, requestQueue* waiting_requests, requestQueue* handled_requests, int id);
+
 #endif /* HW3_THREAD_ARGS_H */
