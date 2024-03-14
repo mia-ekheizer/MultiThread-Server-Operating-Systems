@@ -22,29 +22,8 @@ pthread_cond_t cond_var_master;
 pthread_cond_t cond_var_workers;
 pthread_mutex_t mutex;
 
-// returns the scheduling algorithm that the user picked.
-SchedAlg setSchedAlg(const char* user_input) {
-    // according to piazza, the staff are not going to test invalid input.
-    if(strcmp(user_input, "block") == 0) {
-        return BLOCK;
-    }
-    else if(strcmp(user_input, "dt") == 0) {
-        return DT;
-    }
-    else if(strcmp(user_input, "dh") == 0) {
-        return DH;
-    }
-    else if(strcmp(user_input, "bf") == 0) {
-        return BF;
-    }
-    // user_input == "random"
-    else {
-        return RANDOM;
-    }
-}
-
 // parsing the arguments from the user input.
-void getargs(int *portnum, int *num_threads, int* queue_size, SchedAlg *schedalg, int argc, char *argv[])
+void getargs(int *portnum, int *num_threads, int* queue_size, char** schedalg, int argc, char *argv[])
 {
     if (argc != 5) {
 	    fprintf(stderr, "Usage: %s <port>\n", argv[0]);
@@ -54,7 +33,7 @@ void getargs(int *portnum, int *num_threads, int* queue_size, SchedAlg *schedalg
     *portnum = atoi(argv[1]);
     *num_threads = atoi(argv[2]);
     *queue_size = atoi(argv[3]);
-    *schedalg = setSchedAlg(argv[4]);
+    *schedalg = argv[4];
 }
 
 // the function that all worker num_threads are working on (handling the request).
@@ -64,9 +43,8 @@ void* threadFunction(void* args)
     // after a worker thread finishes handling a request, it waits again for another request.
     while (1) {
         pthread_mutex_lock(&mutex);
-        curr_args->id = pthread_self();
         // free num_threads are waiting for a new request.
-        while (curr_args->waiting_requests->size == 0) // state variable for cond_var_workers.
+        while (isEmpty(curr_args->waiting_requests)) // state variable for cond_var_workers.
         {
             pthread_cond_wait(&cond_var_workers, &mutex);
         }
@@ -96,39 +74,37 @@ void initWorkerThreads(pthread_t* worker_threads, int num_threads, requestQueue*
     }
 }
 
-// destroys the condition variables, joins all the threads and frees all allocated memory.
-void destroyServer(pthread_t* worker_threads, int num_threads, requestQueue* waiting_requests, requestQueue* handled_requests) {
+// destroys the condition variables, joins all the threads and frees allocated memory.
+void destroyServer(pthread_t* worker_threads, int num_threads) {
     pthread_cond_destroy(&cond_var_master);
     pthread_cond_destroy(&cond_var_workers);
     for (int curr_thread_id = 0; curr_thread_id < num_threads; curr_thread_id++)
     {
         pthread_join(worker_threads[curr_thread_id], NULL);
-        // how do we free args for each thread?
     }
     free(worker_threads);
-    free(waiting_requests);
-    free(handled_requests);
 }
 
 int main(int argc, char *argv[])
 {
     // setting up all the structs and variables.
     int listenfd, connfd, clientlen, portnum, num_threads, queue_size;
-    SchedAlg schedalg;
+    char* schedalg;
     struct sockaddr_in clientaddr;
-    requestQueue* waiting_requests = (requestQueue*)malloc(sizeof(requestQueue));
-    requestQueue* handled_requests = (requestQueue*)malloc(sizeof(requestQueue));
+    requestQueue waiting_requests;
+    requestQueue handled_requests;
     serverArgs servArgs;
     
     //initializing structs and variables.
-    pthread_cond_init(&cond_var_workers, NULL);
     pthread_cond_init(&cond_var_master, NULL);
-    initRequestQueue(waiting_requests);
-    initRequestQueue(handled_requests);
-    initServerArgs(&servArgs, mutex, cond_var_workers, cond_var_master, waiting_requests, handled_requests, queue_size);
+    pthread_cond_init(&cond_var_workers, NULL);
+    pthread_mutex_init(&mutex, NULL);
+    initRequestQueue(&waiting_requests);
+    initRequestQueue(&handled_requests);
+    initServerArgs(&servArgs, mutex, cond_var_workers, cond_var_master, &waiting_requests, &handled_requests, queue_size);
     getargs(&portnum, &num_threads, &queue_size, &schedalg, argc, argv);
     pthread_t* worker_threads = (pthread_t*)malloc(sizeof(pthread_t) * num_threads);
-    initWorkerThreads(worker_threads, num_threads, waiting_requests, handled_requests);
+    initWorkerThreads(worker_threads, num_threads, &waiting_requests, &handled_requests);
 
     // server main operation.
     listenfd = Open_listenfd(portnum);
@@ -138,5 +114,5 @@ int main(int argc, char *argv[])
         request* curr_request = initRequest(connfd);
         pickSchedAlg(schedalg, curr_request, &servArgs);
     }
-    destroyServer(worker_threads, num_threads, waiting_requests, handled_requests);
+    destroyServer(worker_threads, num_threads); // are we ever going to get here?
 }

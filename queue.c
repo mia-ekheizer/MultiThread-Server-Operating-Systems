@@ -36,8 +36,8 @@ request* dequeue(requestQueue *q) {
         q->tail = NULL;
     }
     else {
-        q->head = returnRequest->next;
-        returnRequest->prev = NULL;
+        q->head = q->head->next;
+        q->head->prev = NULL;
     }
     q->size--;
     return returnRequest;

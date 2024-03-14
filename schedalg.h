@@ -4,10 +4,7 @@
 #include "queue.h"
 #include "server_args.h"
 
-// all possible scheduling algorithms.
-typedef enum SchedAlg {BLOCK, DT, DH, BF, RANDOM} SchedAlg;
-
-void pickSchedAlg(SchedAlg policy, request* curr_request, serverArgs *servArgs);
+void pickSchedAlg(char* sched_alg, request* curr_request, serverArgs *servArgs);
 void blockSchedAlg(request *req, serverArgs *servArgs);
 void dropTailSchedAlg(request *req, serverArgs *servArgs);
 void dropHeadSchedAlg(request *req, serverArgs *servArgs);

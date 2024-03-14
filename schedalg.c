@@ -3,27 +3,27 @@
 #include "segel.h"
 #include "server_args.h"
 
-// picks the scheduling algorithm according to the user's input if the waiting requests queue is full.
-void pickSchedAlg(SchedAlg sched_alg, request* curr_request, serverArgs *servArgs) {
+// picks the scheduling algorithm according to the user's input in case of overloading.
+void pickSchedAlg(char* sched_alg, request* curr_request, serverArgs *servArgs) {
     pthread_mutex_lock(&(servArgs->currMutex));
     if (servArgs->waiting_requests->size + servArgs->handled_requests->size <= servArgs->queue_size) {
         enqueue(servArgs->waiting_requests, curr_request);
         pthread_cond_signal(&servArgs->cond_var_workers);
         pthread_mutex_unlock(&servArgs->currMutex);
     }
-    else if(sched_alg == BLOCK) {
+    else if(strcmp(sched_alg, "block") == 0) {
         blockSchedAlg(curr_request, servArgs);
     }
-    else if(sched_alg == DT) {
+    else if(strcmp(sched_alg, "dt") == 0) {
         dropTailSchedAlg(curr_request, servArgs);
     }
-    else if(sched_alg == DH) {
+    else if(strcmp(sched_alg, "dh") == 0) {
         dropHeadSchedAlg(curr_request, servArgs);
     }
-    else if(sched_alg == BF) {
+    else if(strcmp(sched_alg, "bf") == 0) {
         blockFlushSchedAlg(curr_request, servArgs);
     }
-    else if(sched_alg == RANDOM) {
+    else if(strcmp(sched_alg, "random") == 0) {
         dropRandomSchedAlg(curr_request, servArgs);
     }
 }
@@ -36,22 +36,20 @@ void blockSchedAlg(request *req, serverArgs *servArgs) {
     enqueue(servArgs->waiting_requests, req);
     pthread_cond_signal(&(servArgs->cond_var_workers));
     pthread_mutex_unlock(&(servArgs->currMutex));
-    Close(req->connfd);
-    free(req);
 }
 
 // implementation of the drop tail scheduling algorithm.
 void dropTailSchedAlg(request *req, serverArgs *servArgs){
-    pthread_mutex_unlock(&(servArgs->currMutex));
     Close(req->connfd);
     free(req);
+    pthread_mutex_unlock(&(servArgs->currMutex));
 }
 
 // implementation of the drop head scheduling algorithm.
 void dropHeadSchedAlg(request *req, serverArgs *servArgs){
-    struct request *temp = dequeue(servArgs->waiting_requests);
-    Close(temp->connfd);
-    free(temp);
+    struct request *head_request = dequeue(servArgs->waiting_requests);
+    Close(head_request->connfd);
+    free(head_request);
     enqueue(servArgs->waiting_requests, req);
     pthread_cond_signal(&servArgs->cond_var_workers);
     pthread_mutex_unlock(&servArgs->currMutex);
