@@ -1,4 +1,4 @@
-#include "scheduling_algorithm.h"
+#include "schedalg.h"
 #include "queue.h"
 #include "segel.h"
 #include "server_args.h"

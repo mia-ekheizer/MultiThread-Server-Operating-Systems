@@ -2,7 +2,7 @@
 #include "request.h"
 #include <pthread.h>
 #include "queue.h"
-#include "scheduling_algorithm.h"
+#include "schedalgs.h"
 #include "thread_args.h"
 #include "server_args.h"
 #include <stdlib.h>
