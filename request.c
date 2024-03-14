@@ -31,7 +31,6 @@ void requestError(int fd, char *cause, char *errnum, char *shortmsg, char *longm
    Rio_writen(fd, buf, strlen(buf));
    printf("%s", buf);
 
-   // TODO: adjust to our implementation
    sprintf(buf, "%sStat-Req-Arrival:: %lu.%06lu\r\n", buf, req->arrival_time.tv_sec, req->arrival_time.tv_usec);
    
 	sprintf(buf, "%sStat-Req-Dispatch:: %lu.%06lu\r\n", buf, calcDispatchInterval(req).tv_sec, calcDispatchInterval(req).tv_usec);

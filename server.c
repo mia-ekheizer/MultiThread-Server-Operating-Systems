@@ -2,7 +2,7 @@
 #include "request.h"
 #include <pthread.h>
 #include "queue.h"
-#include "schedalg.h"
+#include "scheduling_algorithm.h"
 #include "thread_args.h"
 #include "server_args.h"
 #include <stdlib.h>
@@ -22,7 +22,9 @@ pthread_cond_t cond_var_master;
 pthread_cond_t cond_var_workers;
 pthread_mutex_t mutex;
 
+// returns the scheduling algorithm that the user picked.
 SchedAlg setSchedAlg(const char* user_input) {
+    // according to piazza, the staff are not going to test invalid input.
     if(strcmp(user_input, "block") == 0) {
         return BLOCK;
     }
@@ -35,39 +37,27 @@ SchedAlg setSchedAlg(const char* user_input) {
     else if(strcmp(user_input, "bf") == 0) {
         return BF;
     }
-    else if(strcmp(user_input, "random") == 0) {
-        return RANDOM;
-    }
+    // user_input == "random"
     else {
-        //TODO: fix silent exit??
-        exit(1);
+        return RANDOM;
     }
 }
 
-// HW3: Parse the new arguments too
+// parsing the arguments from the user input.
 void getargs(int *portnum, int *num_threads, int* queue_size, SchedAlg *schedalg, int argc, char *argv[])
 {
-    if (argc != 5) { //TODO: changed from <2 to != 5
+    if (argc != 5) {
 	    fprintf(stderr, "Usage: %s <port>\n", argv[0]);
 	    exit(1);
     }
+    // according to piazza, the staff are not going to test invalid input.
     *portnum = atoi(argv[1]);
-    if(*portnum < 1024 || *portnum > 65535) {//TODO: is this necessary?
-        //TODO: fix silent exit??
-        exit(1);
-    }
     *num_threads = atoi(argv[2]);
-    if (!num_threads || *num_threads <= 0) {
-        exit(1);
-    }
     *queue_size = atoi(argv[3]);
-    if (!queue_size || *queue_size <= 0) {
-        exit(1);
-    }
     *schedalg = setSchedAlg(argv[4]);
 }
 
-// the function that all worker num_threads are working on.
+// the function that all worker num_threads are working on (handling the request).
 void* threadFunction(void* args)
 {
     threadArgs* curr_args = (threadArgs*)args;
@@ -96,6 +86,7 @@ void* threadFunction(void* args)
     }
 }
 
+// initialize the worker threads so they will be active and directed to their function.
 void initWorkerThreads(pthread_t* worker_threads, int num_threads, requestQueue* waiting_requests, requestQueue* handled_requests) {
     for (int curr_thread_id = 0; curr_thread_id < num_threads; curr_thread_id++)
     {
@@ -105,6 +96,7 @@ void initWorkerThreads(pthread_t* worker_threads, int num_threads, requestQueue*
     }
 }
 
+// destroys the condition variables, joins all the threads and frees all allocated memory.
 void destroyServer(pthread_t* worker_threads, int num_threads, requestQueue* waiting_requests, requestQueue* handled_requests) {
     pthread_cond_destroy(&cond_var_master);
     pthread_cond_destroy(&cond_var_workers);
@@ -144,7 +136,7 @@ int main(int argc, char *argv[])
 	    clientlen = sizeof(clientaddr);
 	    connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         request* curr_request = initRequest(connfd);
-        pickSchedAlgAndExecute(schedalg, curr_request, &servArgs);
+        pickSchedAlg(schedalg, curr_request, &servArgs);
     }
     destroyServer(worker_threads, num_threads, waiting_requests, handled_requests);
 }

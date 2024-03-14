@@ -16,8 +16,8 @@ all: server client output.cgi
 	-mkdir -p public
 	-cp output.cgi favicon.ico home.html public
 
-server: server.o request.o segel.o queue.o schedalg.o server_args.o thread_args.o
-	$(CC) $(CFLAGS) -o server server.o request.o segel.o queue.o schedalg.o server_args.o thread_args.o $(LIBS)
+server: server.o request.o segel.o queue.o scheduling_algorithm.o server_args.o thread_args.o
+	$(CC) $(CFLAGS) -o server server.o request.o segel.o queue.o scheduling_algorithm.o server_args.o thread_args.o $(LIBS)
 
 client: client.o segel.o
 	$(CC) $(CFLAGS) -o client client.o segel.o

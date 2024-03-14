@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <sys/time.h>
+#include <stdlib.h>
 
 typedef struct request {
     int connfd;
