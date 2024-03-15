@@ -52,8 +52,8 @@ void* threadFunction(void* args)
         request* curr_request = dequeue(curr_args->waiting_requests);
         enqueue(curr_args->handled_requests, curr_request);
         gettimeofday(&(curr_request->dispatch_time), NULL);
+        (curr_args->total_req)++;
         pthread_mutex_unlock(&mutex);
-        curr_args->total_req++;
         requestHandle(curr_request, curr_args);
         pthread_mutex_lock(&mutex);
         request* finished_request = dequeue(curr_args->handled_requests);
@@ -101,8 +101,8 @@ int main(int argc, char *argv[])
     pthread_mutex_init(&mutex, NULL);
     initRequestQueue(&waiting_requests);
     initRequestQueue(&handled_requests);
-    initServerArgs(&servArgs, &mutex, &cond_var_workers, &cond_var_master, &waiting_requests, &handled_requests, queue_size);
     getargs(&portnum, &num_threads, &queue_size, &schedalg, argc, argv);
+    initServerArgs(&servArgs, &mutex, &cond_var_workers, &cond_var_master, &waiting_requests, &handled_requests, queue_size);
     pthread_t* worker_threads = (pthread_t*)malloc(sizeof(pthread_t) * num_threads);
     initWorkerThreads(worker_threads, num_threads, &waiting_requests, &handled_requests);
 

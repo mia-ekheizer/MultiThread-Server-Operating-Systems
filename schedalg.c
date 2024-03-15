@@ -5,11 +5,11 @@
 
 // picks the scheduling algorithm according to the user's input in case of overloading.
 void pickSchedAlg(char* sched_alg, request* curr_request, serverArgs *servArgs) {
-    pthread_mutex_lock(&(servArgs->currMutex));
+    pthread_mutex_lock(servArgs->mutex);
     if (servArgs->waiting_requests->size + servArgs->handled_requests->size <= servArgs->queue_size) {
         enqueue(servArgs->waiting_requests, curr_request);
-        pthread_cond_signal(&servArgs->cond_var_workers);
-        pthread_mutex_unlock(&servArgs->currMutex);
+        pthread_cond_signal(servArgs->cond_var_workers);
+        pthread_mutex_unlock(servArgs->mutex);
     }
     else if(strcmp(sched_alg, "block") == 0) {
         blockSchedAlg(curr_request, servArgs);
@@ -31,18 +31,18 @@ void pickSchedAlg(char* sched_alg, request* curr_request, serverArgs *servArgs) 
 // implementation of the block scheduling algorithm.
 void blockSchedAlg(request *req, serverArgs *servArgs) {
     while(servArgs->waiting_requests->size + servArgs->handled_requests->size > servArgs->queue_size) {
-        pthread_cond_wait(&(servArgs->cond_var_master), &(servArgs->currMutex));
+        pthread_cond_wait(servArgs->cond_var_master, servArgs->mutex);
     }
     enqueue(servArgs->waiting_requests, req);
-    pthread_cond_signal(&(servArgs->cond_var_workers));
-    pthread_mutex_unlock(&(servArgs->currMutex));
+    pthread_cond_signal(servArgs->cond_var_workers);
+    pthread_mutex_unlock(servArgs->mutex);
 }
 
 // implementation of the drop tail scheduling algorithm.
 void dropTailSchedAlg(request *req, serverArgs *servArgs){
     Close(req->connfd);
     free(req);
-    pthread_mutex_unlock(&(servArgs->currMutex));
+    pthread_mutex_unlock(servArgs->mutex);
 }
 
 // implementation of the drop head scheduling algorithm.
@@ -51,17 +51,17 @@ void dropHeadSchedAlg(request *req, serverArgs *servArgs){
     Close(head_request->connfd);
     free(head_request);
     enqueue(servArgs->waiting_requests, req);
-    pthread_cond_signal(&servArgs->cond_var_workers);
-    pthread_mutex_unlock(&servArgs->currMutex);
+    pthread_cond_signal(servArgs->cond_var_workers);
+    pthread_mutex_unlock(servArgs->mutex);
 }
 
 // implementation of the block flush scheduling algorithm.
 void blockFlushSchedAlg(request *req, serverArgs *servArgs){
     
-    pthread_mutex_unlock(&servArgs->currMutex);
+    pthread_mutex_unlock(servArgs->mutex);
 }
 
 // implementation of the drop random scheduling algorithm.
 void dropRandomSchedAlg(request *req, serverArgs *servArgs){
-    pthread_mutex_unlock(&servArgs->currMutex);
+    pthread_mutex_unlock(servArgs->mutex);
 }
