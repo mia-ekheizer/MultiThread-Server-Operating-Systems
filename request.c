@@ -192,6 +192,7 @@ void requestServeStatic(int fd, char *filename, int filesize, struct timeval arr
 void requestHandle(request* req, threadArgs* thread_args)
 {
    int fd = req->connfd;
+   (thread_args->total_req)++;
    struct timeval arrival = req->arrival_time;
    struct timeval dispatch = calcDispatchInterval(req);
    int is_static;
