@@ -64,5 +64,16 @@ void blockFlushSchedAlg(request *req, serverArgs *servArgs){
 
 // implementation of the drop random scheduling algorithm.
 void dropRandomSchedAlg(request *req, serverArgs *servArgs){
+    int dropped_counter = 0;
+    int num_of_requests_to_drop = servArgs->waiting_requests->size / 2;
+    if (servArgs->waiting_requests->size % 2 != 0) {
+        num_of_requests_to_drop++;
+    }
+    while (dropped_counter < num_of_requests_to_drop) {
+        deleteByIndex(servArgs->waiting_requests, rand() % servArgs->waiting_requests->size);
+        dropped_counter++;
+    }
+    enqueue(servArgs->waiting_requests, req);
+    pthread_cond_signal(servArgs->cond_var_workers);
     pthread_mutex_unlock(servArgs->mutex);
 }

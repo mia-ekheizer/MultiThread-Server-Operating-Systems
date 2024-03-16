@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <stdlib.h>
+#include "segel.h"
 
 typedef struct request {
     int connfd;
@@ -24,8 +25,6 @@ void initRequestQueue(requestQueue* q);
 request* initRequest(int connfd);
 void enqueue(requestQueue *q, request *req);
 request* dequeue(requestQueue *q);
-
-//for drop_random usage:
-void delByIndex(requestQueue *q, int index);
+void deleteByIndex(requestQueue *q, int index);
 
 #endif /* HW3_QUEUE_H */

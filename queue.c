@@ -44,4 +44,36 @@ request* dequeue(requestQueue *q) {
 }
 
 //for drop_random usage:
-void delByIndex(requestQueue *q, int index); //TODO:
+void deleteByIndex(requestQueue *q, int index) {
+    int curr_index = 0;
+    request* curr_request = q->head;
+    if (index > q->size) {
+        return;
+    }
+    while (curr_request != NULL) {
+        if (curr_index == index) {
+            if (q->head == curr_request) { // if we want to delete the head of the queue
+                request* to_delete = dequeue(q);
+                Close(to_delete->connfd);
+                free(to_delete);
+                return;
+            }
+            else if (q->tail == curr_request) { // if we want to delete the tail of the queue
+                curr_request->prev->next = NULL;
+                q->tail = curr_request->prev;
+                Close(curr_request->connfd);
+                free(curr_request);
+                return;
+            }
+            else { // if we want to delete any other element in the queue
+                curr_request->prev->next = curr_request->next;
+                curr_request->next->prev = curr_request->prev;
+                Close(curr_request->connfd);
+                free(curr_request);
+                return;
+            } 
+        }
+        curr_request = curr_request->next;
+        curr_index++;
+    }
+}
