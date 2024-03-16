@@ -24,8 +24,6 @@ void initRequestQueue(requestQueue* q);
 request* initRequest(int connfd);
 void enqueue(requestQueue *q, request *req);
 request* dequeue(requestQueue *q);
-int isEmpty(requestQueue *q);
-struct timeval calcDispatchInterval(request* req);
 
 //for drop_random usage:
 void delByIndex(requestQueue *q, int index);

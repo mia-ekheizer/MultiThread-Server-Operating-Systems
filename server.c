@@ -44,15 +44,15 @@ void* threadFunction(void* args)
     while (1) {
         pthread_mutex_lock(&mutex);
         // free num_threads are waiting for a new request.
-        while (isEmpty(curr_args->waiting_requests)) // state variable for cond_var_workers.
+        while (curr_args->waiting_requests->size == 0) // state variable for cond_var_workers.
         {
             pthread_cond_wait(&cond_var_workers, &mutex);
         }
         // once there is a free thread and a waiting request, the thread starts handling the request.
         request* curr_request = dequeue(curr_args->waiting_requests);
         enqueue(curr_args->handled_requests, curr_request);
-        gettimeofday(&(curr_request->dispatch_time), NULL);
         pthread_mutex_unlock(&mutex);
+        gettimeofday(&(curr_request->dispatch_time), NULL);
         requestHandle(curr_request, curr_args);
         pthread_mutex_lock(&mutex);
         request* finished_request = dequeue(curr_args->handled_requests);

@@ -192,7 +192,8 @@ void requestHandle(request* req, threadArgs* thread_args)
    int fd = req->connfd;
    (thread_args->total_req)++;
    struct timeval arrival = req->arrival_time;
-   struct timeval dispatch = calcDispatchInterval(req);
+   struct timeval dispatch;
+   timersub(&(req->dispatch_time), &(req->arrival_time), &dispatch);
    int is_static;
    struct stat sbuf;
    char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];

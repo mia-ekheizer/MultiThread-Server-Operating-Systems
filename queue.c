@@ -16,7 +16,7 @@ request* initRequest(int connfd) {
 }
 
 void enqueue(requestQueue *q, request *req) {
-    if(isEmpty(q)) {
+    if(q->size == 0) {
         q->head = req;
         q->tail = req;
     }
@@ -41,16 +41,6 @@ request* dequeue(requestQueue *q) {
     }
     q->size--;
     return returnRequest;
-}
-
-int isEmpty(requestQueue *q) {
-    return q->size == 0;
-}
-
-struct timeval calcDispatchInterval(request* req) {
-    struct timeval result;
-    timersub(&(req->dispatch_time), &(req->arrival_time), &result);
-    return result;
 }
 
 //for drop_random usage:
