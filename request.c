@@ -133,7 +133,7 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs, struct timeval a
 
 	sprintf(buf, "%sStat-Thread-Static:: %d\r\n", buf, t_stats->stat_req);
 
-	sprintf(buf, "%sStat-Thread-Dynamic:: %d\r\n\r\n", buf, t_stats->dynm_req);
+	sprintf(buf, "%sStat-Thread-Dynamic:: %d\r\n", buf, t_stats->dynm_req);
 
    Rio_writen(fd, buf, strlen(buf));
    int pid = 0;
@@ -165,8 +165,6 @@ void requestServeStatic(int fd, char *filename, int filesize, struct timeval arr
    // put together response
    sprintf(buf, "HTTP/1.0 200 OK\r\n");
    sprintf(buf, "%sServer: OS-HW3 Web Server\r\n", buf);
-   sprintf(buf, "HTTP/1.0 200 OK\r\n");
-	sprintf(buf, "%sServer: OS-HW3 Web Server\r\n", buf);
 	sprintf(buf, "%sContent-Length: %d\r\n", buf, filesize);
 	sprintf(buf, "%sContent-Type: %s\r\n", buf, filetype);
 	sprintf(buf, "%sStat-Req-Arrival:: %lu.%06lu\r\n", buf, arrival.tv_sec, arrival.tv_usec);
