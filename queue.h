@@ -26,5 +26,6 @@ request* initRequest(int connfd);
 void enqueue(requestQueue *q, request *req);
 request* dequeue(requestQueue *q);
 void deleteByIndex(requestQueue *q, int index);
+void deleteByConnfd(requestQueue *q, int connfd);
 
 #endif /* HW3_QUEUE_H */

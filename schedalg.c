@@ -42,6 +42,7 @@ void blockSchedAlg(request *req, serverArgs *servArgs) {
 void dropTailSchedAlg(request *req, serverArgs *servArgs){
     Close(req->connfd);
     free(req);
+    pthread_cond_signal(servArgs->cond_var_workers);
     pthread_mutex_unlock(servArgs->mutex);
 }
 
@@ -50,21 +51,20 @@ void dropHeadSchedAlg(request *req, serverArgs *servArgs){
     if (servArgs->waiting_requests->size == 0) {
         Close(req->connfd);
         free(req);
-        pthread_mutex_unlock(servArgs->mutex);
-        return;
     }
     else {
         request *head_request = dequeue(servArgs->waiting_requests);
         Close(head_request->connfd);
         free(head_request);
         enqueue(servArgs->waiting_requests, req);
-        pthread_cond_signal(servArgs->cond_var_workers);
-        pthread_mutex_unlock(servArgs->mutex);
     }
+    pthread_cond_signal(servArgs->cond_var_workers);
+    pthread_mutex_unlock(servArgs->mutex);
 }
 
 // implementation of the block flush scheduling algorithm.
 void blockFlushSchedAlg(request *req, serverArgs *servArgs){
+    pthread_cond_signal(servArgs->cond_var_workers);
     pthread_mutex_unlock(servArgs->mutex);
 }
 
@@ -73,8 +73,6 @@ void dropRandomSchedAlg(request *req, serverArgs *servArgs){
     if (servArgs->waiting_requests->size == 0) {
         Close(req->connfd);
         free(req);
-        pthread_mutex_unlock(servArgs->mutex);
-        return;
     }
     else {
         int dropped_counter = 0;
@@ -87,7 +85,7 @@ void dropRandomSchedAlg(request *req, serverArgs *servArgs){
             dropped_counter++;
         }
         enqueue(servArgs->waiting_requests, req);
-        pthread_cond_signal(servArgs->cond_var_workers);
-        pthread_mutex_unlock(servArgs->mutex);
     }
+    pthread_cond_signal(servArgs->cond_var_workers);
+    pthread_mutex_unlock(servArgs->mutex);
 }

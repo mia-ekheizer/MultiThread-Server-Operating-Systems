@@ -79,3 +79,41 @@ void deleteByIndex(requestQueue *q, int index) {
     Close(to_delete->connfd);
     free(to_delete);
 }
+
+// for the threads' function usage
+void deleteByConnfd(requestQueue *q, int connfd) {
+    request* curr_request = q->head;
+    int curr_connfd = curr_request->connfd;
+    request* to_delete;
+    while (curr_request != NULL && curr_connfd != connfd) {
+        curr_request = curr_request->next;
+        curr_connfd = curr_request->connfd;
+    }
+    // if no request found with connfd
+    if (curr_request == NULL) {
+        return;
+    }
+    // if we want to delete the head of the queue
+    else if (q->head == curr_request) { 
+        to_delete = dequeue(q);
+    }
+    // if we want to delete the tail of the queue
+    else if (q->tail == curr_request) { 
+        request* new_tail = curr_request->prev;
+        new_tail->next = NULL;
+        q->tail = new_tail;
+        to_delete = curr_request;
+        q->size--;
+    }
+    // if we want to delete any other element in the queue
+    else { 
+        request* curr_prev = curr_request->prev;
+        request* curr_next = curr_request->next;
+        curr_prev->next = curr_request->next;
+        curr_next->prev = curr_request->prev;
+        to_delete = curr_request;
+        q->size--;
+    } 
+    Close(to_delete->connfd);
+    free(to_delete);
+}

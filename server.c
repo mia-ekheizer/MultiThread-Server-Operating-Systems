@@ -55,13 +55,10 @@ void* threadFunction(void* args)
         gettimeofday(&(curr_request->dispatch_time), NULL);
         requestHandle(curr_request, curr_args);
         pthread_mutex_lock(&mutex);
-        request* finished_request = dequeue(curr_args->handled_requests);
+        deleteByConnfd(curr_args->handled_requests, curr_request->connfd);
         // the thread signals the master that a request has been handled.
         pthread_cond_signal(&cond_var_master);
         pthread_mutex_unlock(&mutex);
-        // finish handling the request.
-        Close(finished_request->connfd);
-        free(finished_request);
     }
 }
 
