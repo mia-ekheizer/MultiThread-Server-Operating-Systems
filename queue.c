@@ -45,35 +45,37 @@ request* dequeue(requestQueue *q) {
 
 //for drop_random usage:
 void deleteByIndex(requestQueue *q, int index) {
-    int curr_index = 0;
-    request* curr_request = q->head;
-    if (index > q->size) {
+    if (index > q->size - 1) {
         return;
     }
-    while (curr_request != NULL) {
-        if (curr_index == index) {
-            if (q->head == curr_request) { // if we want to delete the head of the queue
-                request* to_delete = dequeue(q);
-                Close(to_delete->connfd);
-                free(to_delete);
-                return;
-            }
-            else if (q->tail == curr_request) { // if we want to delete the tail of the queue
-                curr_request->prev->next = NULL;
-                q->tail = curr_request->prev;
-                Close(curr_request->connfd);
-                free(curr_request);
-                return;
-            }
-            else { // if we want to delete any other element in the queue
-                curr_request->prev->next = curr_request->next;
-                curr_request->next->prev = curr_request->prev;
-                Close(curr_request->connfd);
-                free(curr_request);
-                return;
-            } 
-        }
+    int curr_index = 0;
+    request* curr_request = q->head;
+    request* to_delete;
+    while (curr_index != index) {
         curr_request = curr_request->next;
         curr_index++;
     }
+    // if we want to delete the head of the queue
+    if (q->head == curr_request) { 
+        to_delete = dequeue(q);
+    }
+    // if we want to delete the tail of the queue
+    else if (q->tail == curr_request) { 
+        request* new_tail = curr_request->prev;
+        new_tail->next = NULL;
+        q->tail = new_tail;
+        to_delete = curr_request;
+        q->size--;
+    }
+    // if we want to delete any other element in the queue
+    else { 
+        request* curr_prev = curr_request->prev;
+        request* curr_next = curr_request->next;
+        curr_prev->next = curr_request->next;
+        curr_next->prev = curr_request->prev;
+        to_delete = curr_request;
+        q->size--;
+    } 
+    Close(to_delete->connfd);
+    free(to_delete);
 }

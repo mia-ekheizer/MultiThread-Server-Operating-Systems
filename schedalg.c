@@ -47,14 +47,20 @@ void dropTailSchedAlg(request *req, serverArgs *servArgs){
 
 // implementation of the drop head scheduling algorithm.
 void dropHeadSchedAlg(request *req, serverArgs *servArgs){
-    if (servArgs->waiting_requests->size != 0) {
-        struct request *head_request = dequeue(servArgs->waiting_requests);
+    if (servArgs->waiting_requests->size == 0) {
+        Close(req->connfd);
+        free(req);
+        pthread_mutex_unlock(servArgs->mutex);
+        return;
+    }
+    else {
+        request *head_request = dequeue(servArgs->waiting_requests);
         Close(head_request->connfd);
         free(head_request);
+        enqueue(servArgs->waiting_requests, req);
+        pthread_cond_signal(servArgs->cond_var_workers);
+        pthread_mutex_unlock(servArgs->mutex);
     }
-    enqueue(servArgs->waiting_requests, req);
-    pthread_cond_signal(servArgs->cond_var_workers);
-    pthread_mutex_unlock(servArgs->mutex);
 }
 
 // implementation of the block flush scheduling algorithm.
@@ -64,16 +70,24 @@ void blockFlushSchedAlg(request *req, serverArgs *servArgs){
 
 // implementation of the drop random scheduling algorithm.
 void dropRandomSchedAlg(request *req, serverArgs *servArgs){
-    int dropped_counter = 0;
-    int num_of_requests_to_drop = servArgs->waiting_requests->size / 2;
-    if (servArgs->waiting_requests->size % 2 != 0) {
-        num_of_requests_to_drop++;
+    if (servArgs->waiting_requests->size == 0) {
+        Close(req->connfd);
+        free(req);
+        pthread_mutex_unlock(servArgs->mutex);
+        return;
     }
-    while (dropped_counter < num_of_requests_to_drop) {
-        deleteByIndex(servArgs->waiting_requests, rand() % servArgs->waiting_requests->size);
-        dropped_counter++;
+    else {
+        int dropped_counter = 0;
+        int num_of_requests_to_drop = servArgs->waiting_requests->size / 2;
+        if (servArgs->waiting_requests->size % 2 != 0) {
+            num_of_requests_to_drop++;
+        }
+        while (dropped_counter < num_of_requests_to_drop) {
+            deleteByIndex(servArgs->waiting_requests, rand() % servArgs->waiting_requests->size);
+            dropped_counter++;
+        }
+        enqueue(servArgs->waiting_requests, req);
+        pthread_cond_signal(servArgs->cond_var_workers);
+        pthread_mutex_unlock(servArgs->mutex);
     }
-    enqueue(servArgs->waiting_requests, req);
-    pthread_cond_signal(servArgs->cond_var_workers);
-    pthread_mutex_unlock(servArgs->mutex);
 }

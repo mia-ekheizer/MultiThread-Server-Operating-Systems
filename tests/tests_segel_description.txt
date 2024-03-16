@@ -49,18 +49,18 @@ test equal2: // FAIL DUE TO CONNECTION ERROR
 test equal3: // FAIL DUE TO CONNECTION ERROR
  equal buffers and threads server params: threads 16, Q_size 16. 12 clients each requesting ['/home.html', '/output.cgi?0.3', '/favicon.ico'], 20 times
 
-test fewer: // FAIL
+test fewer: // FAIL - WILL NOT BE TESTED
  fewer buffers than threads server params: threads 16, Q_size 8. 20 clients each requesting ['/home.html', '/output.cgi?0.3', '/favicon.ico'], 20 times
 
-test drop_head: // FAIL DUE TO CONNECTION ERROR
+test drop_head: // FAIL DUE TO EMPTY RESPONSE
  testing a drop head policy by counting the number of accepted requests. server params: 2 threads, Q_size: 8, policy: drop head.       
  the client sends 14 concurrent requests. the first two should be handled immediatly, 2-8 should be in waiting but recieving requests 9-14 will cause requests 2-8 to be dropped.
 
-test drop_tail: // FAIL
+test drop_tail: // FAIL DUE TO EMPTY RESPONSE
  testing a drop tail policy by counting the number of accepted requests. server params: 2 threads, Q_size: 8, policy: drop tail.       
  the client sends 12 concurrent requests. the first two should be handled immediatly, 6 should be in waiting and the 9th-12th requests will be dropped.
 
-test drop_random:
+test drop_random: // FAIL DUE TO DROPPING TOO MANY REQUESTS
  testing a drop random policy by counting the number of accepted requests. server params: 2 threads, Q_size: 8, policy: drop random.       
  the client sends 9 concurrent requests. the first two should be handled immediatly, 6 should be in waiting and the 9th request will trigger the random drop, which should drop 0.25*6 =ciel(1.5)=2 requests top drop.
 
@@ -80,8 +80,8 @@ test stats_distpatch_time: // PASS
 
  OTHER TESTS:
  test_block - PASS
- test_drop_head - 4 PASS 8 FAIL
- test_drop_tail - 8 PASS 3 FAIL
- test_errors - 3 PASS 2 FAIL
- test_requests - 3 PASS 2 FAIL
- test_sanity - 1 PASS 1 FAIL
+ test_drop_head - 8 PASS 4 FAIL DUE TO INACCURATE DISPATCH TIME AND KEEPING FINISHED REQUESTS
+ test_drop_tail - 9 PASS 2 FAIL DUE TO INACCURATE DISPATCH TIME AND KEEPING FINISHED REQUESTS
+ test_errors - 3 PASS 2 FAIL DUE TO CONNECTION ERROR
+ test_requests - 3 PASS 2 FAIL DUE TO INACCURATE CONTENT LENGTH
+ test_sanity - 1 PASS 1 FAIL DUE TO INACCURATE CONTENT LENGTH

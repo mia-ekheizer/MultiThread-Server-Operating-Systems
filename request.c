@@ -194,6 +194,7 @@ void requestHandle(request* req, threadArgs* thread_args)
    struct timeval arrival = req->arrival_time;
    struct timeval dispatch;
    timersub(&(req->dispatch_time), &(req->arrival_time), &dispatch);
+   
    int is_static;
    struct stat sbuf;
    char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
